@@ -67,3 +67,14 @@ export type Notification = {
   readAt?: string;
   createdAt: string;
 };
+
+export type ConsultationReview = {
+  id: string;
+  consultationRequestId: string;
+  userId: string;
+  companyId: string;
+  /** 1-5 */
+  rating: number;
+  body?: string;
+  createdAt: string;
+};

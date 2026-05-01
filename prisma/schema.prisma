@@ -105,6 +105,7 @@ model User {
   projects Project[]
   consultations    ConsultationRequest[] @relation("UserConsultations")
   consultationMsgs ConsultationMessage[] @relation("UserConsultMsgs")
+  reviews          ConsultationReview[]
   favorites        FavoriteCompany[]
   notifications    Notification[]
   sentMessages     Message[] @relation("Sent")
@@ -141,6 +142,7 @@ model Company {
   quotes           Quote[]
   removalRequests  CompanyRemovalRequest[]
   consultations    ConsultationRequest[]
+  reviews          ConsultationReview[]
   favoritedBy      FavoriteCompany[]
 
   @@index([category])
@@ -183,6 +185,7 @@ model ConsultationRequest {
   updatedAt    DateTime            @updatedAt
 
   messages ConsultationMessage[]
+  review   ConsultationReview?
 
   @@index([userId])
   @@index([companyId])
@@ -202,6 +205,25 @@ model ConsultationMessage {
   sender User @relation("UserConsultMsgs", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([consultationRequestId])
+}
+
+/// 상담 종료 후 사용자가 작성하는 후기.
+/// 상담당 1개 (unique).
+model ConsultationReview {
+  id                    String              @id @default(cuid())
+  consultationRequestId String              @unique
+  request               ConsultationRequest @relation(fields: [consultationRequestId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId             String
+  company               Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// 1-5
+  rating                Int
+  body                  String?
+  createdAt             DateTime            @default(now())
+
+  @@index([companyId])
+  @@index([userId])
 }
 
 model FavoriteCompany {

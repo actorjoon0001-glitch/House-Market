@@ -5,9 +5,12 @@ import { notFound, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import LegalNotice from "@/components/LegalNotice";
 import StatusBadge from "@/components/StatusBadge";
+import ReviewForm from "@/components/ReviewForm";
+import StarRating from "@/components/StarRating";
 import {
   appendMessage,
   findConsultation,
+  findReviewByConsultation,
   listMessages,
   MOCK_USER_ID,
   updateConsultationStatus,
@@ -15,6 +18,7 @@ import {
 import type {
   ConsultationMessage,
   ConsultationRequest,
+  ConsultationReview,
 } from "@/lib/consultations/types";
 import { findArchitect } from "@/lib/demo/architects";
 
@@ -25,12 +29,19 @@ export default function ConsultationDetailPage() {
     undefined,
   );
   const [messages, setMessages] = useState<ConsultationMessage[]>([]);
+  const [review, setReview] = useState<ConsultationReview | null | undefined>(
+    undefined,
+  );
   const [reply, setReply] = useState("");
 
   async function reload() {
     const r = await findConsultation(id);
     setReq(r ?? null);
-    if (r) setMessages(await listMessages(id));
+    if (r) {
+      setMessages(await listMessages(id));
+      const rv = await findReviewByConsultation(id);
+      setReview(rv ?? null);
+    }
   }
 
   useEffect(() => {
@@ -132,11 +143,29 @@ export default function ConsultationDetailPage() {
             </button>
           </div>
         </div>
+      ) : review === undefined ? null : review ? (
+        <div className="rounded-xl border border-gray-200 bg-white p-4">
+          <p className="text-sm font-semibold">내가 작성한 후기</p>
+          <div className="mt-1.5 flex items-center gap-2">
+            <StarRating value={review.rating} readOnly />
+            <span className="text-xs text-gray-500">
+              {new Date(review.createdAt).toLocaleDateString("ko-KR")}
+            </span>
+          </div>
+          {review.body && (
+            <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700">
+              {review.body}
+            </p>
+          )}
+        </div>
       ) : (
-        <p className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center text-xs text-gray-500">
-          종료된 상담입니다.
-        </p>
+        <ReviewForm
+          consultationRequestId={id}
+          companyId={req.companyId}
+          onSubmitted={reload}
+        />
       )}
+
 
       <LegalNotice />
     </div>
