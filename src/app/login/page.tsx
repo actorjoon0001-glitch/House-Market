@@ -57,9 +57,10 @@ export default function LoginPage() {
       provider: "kakao",
       options: {
         redirectTo,
-        // 개인 개발자 계정의 카카오 앱은 account_email 권한이 없어 KOE205로 차단됨.
-        // 닉네임·프로필 사진만 요청해서 통과시킴. 비즈 앱 전환 후엔 account_email 추가 가능.
-        scopes: "profile_nickname profile_image",
+        // 개인 개발자 카카오 앱은 동의항목 중 닉네임만 활성화 가능.
+        // 다른 항목(account_email, profile_image)은 권한 없음/사용 안 함이라
+        // 요청에 포함하면 KOE205로 차단됨. 닉네임 하나만 요청.
+        scopes: "profile_nickname",
       },
     });
     if (error) {
