@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [kakaoLoading, setKakaoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function send(e: React.FormEvent) {
@@ -37,6 +38,30 @@ export default function LoginPage() {
       return;
     }
     setSent(true);
+  }
+
+  async function signInKakao() {
+    setError(null);
+    setKakaoLoading(true);
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      setError("Supabase가 설정되지 않았습니다.");
+      setKakaoLoading(false);
+      return;
+    }
+    const redirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback`
+        : undefined;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: { redirectTo },
+    });
+    if (error) {
+      setError(error.message);
+      setKakaoLoading(false);
+    }
+    // 성공 시 카카오 OAuth 페이지로 자동 리다이렉트되므로 finally로 풀지 않음
   }
 
   return (
@@ -84,10 +109,28 @@ export default function LoginPage() {
           </p>
         </div>
       ) : (
-        <form onSubmit={send} className="flex flex-col gap-3">
-          <input
-            required
-            type="email"
+        <div className="flex flex-col gap-3">
+          {/* 카카오 로그인 버튼 (먼저 표시 — 더 빠른 옵션) */}
+          <button
+            type="button"
+            onClick={signInKakao}
+            disabled={kakaoLoading}
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#FEE500] py-3 text-base font-semibold text-[#3C1E1E] transition hover:bg-[#fdd835] disabled:opacity-60"
+          >
+            <span aria-hidden className="text-lg">💬</span>
+            {kakaoLoading ? "이동 중..." : "카카오로 시작하기"}
+          </button>
+
+          <div className="my-1 flex items-center gap-3 text-[11px] text-gray-400">
+            <span className="h-px flex-1 bg-gray-200" />
+            또는 이메일로
+            <span className="h-px flex-1 bg-gray-200" />
+          </div>
+
+          <form onSubmit={send} className="flex flex-col gap-3">
+            <input
+              required
+              type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="이메일 주소"
@@ -100,12 +143,13 @@ export default function LoginPage() {
           >
             {sending ? "전송 중..." : "로그인 링크 받기"}
           </button>
-          {error && (
-            <p className="rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
-              {error}
-            </p>
-          )}
-        </form>
+            {error && (
+              <p className="rounded-lg bg-red-50 p-2.5 text-xs text-red-600">
+                {error}
+              </p>
+            )}
+          </form>
+        </div>
       )}
 
       <p className="text-center text-xs text-gray-400">
