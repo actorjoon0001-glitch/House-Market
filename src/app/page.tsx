@@ -33,6 +33,21 @@ export default function HomePage() {
       </section>
 
       <Link
+        href="/projects/new"
+        className="block rounded-2xl bg-gradient-to-br from-brand to-brand-700 p-5 text-white shadow-lg"
+      >
+        <p className="text-xs font-medium opacity-90">✨ NEW · AI 콘셉트 설계</p>
+        <p className="mt-1.5 text-lg font-bold leading-snug">
+          AI로 평면도·3D 만들고
+          <br />
+          그대로 견적 받기
+        </p>
+        <p className="mt-2 text-xs opacity-90">
+          요구사항만 입력 → 30초만에 콘셉트 완성
+        </p>
+      </Link>
+
+      <Link
         href="/map"
         className="block rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4"
       >
