@@ -1,6 +1,29 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import KakaoAddressSearch, {
+  type ResolvedAddress,
+} from "@/components/KakaoAddressSearch";
+
+const SPECIALTIES = [
+  "체류형 쉼터",
+  "이동식 주택",
+  "전원주택",
+  "패시브하우스",
+  "리모델링",
+];
 
 export default function ApplyPage() {
+  const [address, setAddress] = useState<ResolvedAddress | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
+
+  function toggleSpec(s: string) {
+    setPicked((cur) =>
+      cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s],
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5 p-4 md:max-w-2xl md:py-10">
       <header>
@@ -44,30 +67,44 @@ export default function ApplyPage() {
         </Field>
         <Field label="시공 가능 카테고리 (복수 선택)">
           <div className="grid grid-cols-2 gap-2">
-            {[
-              "체류형 쉼터",
-              "이동식 주택",
-              "전원주택",
-              "패시브하우스",
-              "리모델링",
-            ].map((s) => (
-              <label
-                key={s}
-                className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm"
-              >
-                <input type="checkbox" className="accent-brand" />
-                {s}
-              </label>
-            ))}
+            {SPECIALTIES.map((s) => {
+              const on = picked.includes(s);
+              return (
+                <label
+                  key={s}
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
+                    on
+                      ? "border-brand bg-brand-50 text-brand"
+                      : "border-gray-200"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    onChange={() => toggleSpec(s)}
+                    className="accent-brand"
+                  />
+                  {s}
+                </label>
+              );
+            })}
           </div>
         </Field>
         <Field label="사무실 주소">
-          <input
-            type="text"
-            placeholder="시·도부터 입력"
-            className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-brand"
+          <KakaoAddressSearch
+            placeholder="시·도부터 입력 (예: 서울 강남구 테헤란로)"
+            onResolve={setAddress}
           />
         </Field>
+        {address && (
+          <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+            <p className="font-medium text-gray-800">📍 선택된 주소</p>
+            <p className="mt-1">{address.address}</p>
+            {address.roadAddress && (
+              <p className="text-gray-500">{address.roadAddress}</p>
+            )}
+          </div>
+        )}
 
         <label className="flex items-start gap-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
           <input type="checkbox" className="mt-0.5 accent-brand" />
