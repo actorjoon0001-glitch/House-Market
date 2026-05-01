@@ -1,12 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import FloorPlan2D from "@/components/FloorPlan2D";
 import KakaoAddressSearch, {
   type ResolvedAddress,
 } from "@/components/KakaoAddressSearch";
 import KakaoMap, { type MapPin } from "@/components/KakaoMap";
+import { createConsultation } from "@/lib/consultations/store";
 import {
   DEMO_ARCHITECTS,
   SPECIALTY_COLOR,
@@ -21,6 +23,7 @@ import type {
   FloorPlan,
   ProjectStyle,
 } from "@/lib/types";
+import { PYEONG_TO_M2 } from "@/lib/types";
 
 const FloorPlan3D = dynamic(() => import("@/components/FloorPlan3D"), {
   ssr: false,
@@ -137,10 +140,11 @@ export default function NewProjectWizard() {
         />
       )}
 
-      {step === 5 && lot && (
+      {step === 5 && lot && estimate && (
         <Step5
           lot={lot}
           req={req}
+          estimate={estimate}
           onBack={() => setStep(4)}
         />
       )}
@@ -523,10 +527,12 @@ function styleToSpecialties(style: ProjectStyle): BuildSpecialty[] {
 function Step5({
   lot,
   req,
+  estimate,
   onBack,
 }: {
   lot: ResolvedAddress;
   req: DesignRequirements;
+  estimate: Estimate;
   onBack: () => void;
 }) {
   const targetSpecialties = useMemo(
@@ -535,7 +541,7 @@ function Step5({
   );
 
   const [pickedIds, setPickedIds] = useState<Set<string>>(new Set());
-  const [sent, setSent] = useState(false);
+  const [sentIds, setSentIds] = useState<string[] | null>(null);
 
   const matches = useMemo(() => {
     const scored = DEMO_ARCHITECTS.map((a) => {
@@ -548,9 +554,13 @@ function Step5({
       ).length;
       return { a, distanceKm, overlap };
     });
+    // verified 우선, 그다음 매칭 점수, 거리순
     return scored
       .filter((s) => s.overlap > 0)
       .sort((x, y) => {
+        const xVer = x.a.verifiedStatus === "verified" ? 0 : 1;
+        const yVer = y.a.verifiedStatus === "verified" ? 0 : 1;
+        if (xVer !== yVer) return xVer - yVer;
         if (y.overlap !== x.overlap) return y.overlap - x.overlap;
         return x.distanceKm - y.distanceKm;
       })
@@ -590,33 +600,87 @@ function Step5({
     });
   }
 
-  function sendConsultationRequests() {
-    setSent(true);
+  function buildPrefill() {
+    const styleLabel = STYLES.find((s) => s.key === req.style)?.label ?? req.style;
+    const title = `[AI 콘셉트 설계 상담] ${req.totalAreaPyeong}평 ${styleLabel} 주택`;
+    const message = [
+      `■ 요구사항`,
+      `· 평수: ${req.totalAreaPyeong}평 (약 ${(req.totalAreaPyeong * PYEONG_TO_M2).toFixed(1)}㎡)`,
+      `· 층수: ${req.floors}층 / 침실 ${req.bedrooms}개 / 욕실 ${req.bathrooms}개`,
+      `· 스타일: ${styleLabel}`,
+      req.budgetWon ? `· 예산: ${req.budgetWon.toLocaleString()}원` : "",
+      req.notes ? `· 추가 요청: ${req.notes}` : "",
+      ``,
+      `■ 대지`,
+      `· 주소: ${lot.address}`,
+      ``,
+      `■ AI 예상 견적 (참고용)`,
+      `· 총 ${(estimate.totalWon / 100_000_000).toFixed(2)}억원`,
+      `· 평당 ${(estimate.pyeongUnitWon / 10000).toFixed(0)}만원 / 공기 약 ${estimate.leadTimeDays}일`,
+      ``,
+      `※ AI 설계 결과와 예상 견적은 참고용 콘셉트이며, 실제 견적·도면은 현장 검토에 따라 달라집니다.`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    return { title, message };
   }
 
-  if (sent) {
+  function sendConsultationRequests() {
+    const verifiedOnly = Array.from(pickedIds).filter((id) => {
+      const a = DEMO_ARCHITECTS.find((x) => x.id === id);
+      return a?.verifiedStatus === "verified";
+    });
+    const prefill = buildPrefill();
+    const created: string[] = [];
+    for (const companyId of verifiedOnly) {
+      const c = createConsultation({
+        companyId,
+        title: prefill.title,
+        message: prefill.message,
+        budgetWon: req.budgetWon,
+        desiredArea: lot.region ?? lot.address,
+      });
+      created.push(c.id);
+    }
+    setSentIds(created);
+  }
+
+  if (sentIds) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-8 text-center">
         <p className="text-4xl">📨</p>
-        <p className="text-lg font-bold">상담 요청을 전달했어요</p>
+        <p className="text-lg font-bold">상담 요청이 접수되었습니다</p>
         <p className="text-sm text-gray-600">
-          {pickedIds.size}개 업체에 상담 요청이 전달됐습니다.
+          {sentIds.length}개 입점 업체에 상담 요청이 전달됐습니다.
           <br />
-          답변이 오면 채팅·이메일로 알려드릴게요.
+          업체 답변은 <strong>내 상담함</strong>에서 확인할 수 있습니다.
         </p>
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          <Link
+            href="/consultations"
+            className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"
+          >
+            상담함 열기
+          </Link>
+          <button
+            onClick={onBack}
+            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm"
+          >
+            이전으로
+          </button>
+        </div>
         <p className="mt-2 rounded-lg bg-white p-2.5 text-[11px] leading-relaxed text-gray-500">
           상담 요청은 계약 체결이 아니며, 실제 계약은 사용자와 업체 간 직접
           진행됩니다.
         </p>
-        <button
-          onClick={onBack}
-          className="mt-2 rounded-xl border border-gray-200 px-4 py-2 text-sm"
-        >
-          이전으로
-        </button>
       </div>
     );
   }
+
+  const verifiedSelected = Array.from(pickedIds).filter((id) => {
+    const a = DEMO_ARCHITECTS.find((x) => x.id === id);
+    return a?.verifiedStatus === "verified";
+  });
 
   return (
     <div className="flex flex-col gap-3">
@@ -632,27 +696,32 @@ function Step5({
       </div>
 
       <p className="rounded-lg bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
-        샘플 데이터입니다. 상담 요청은 전송되지 않으며, 업체 입점 후 실제로
-        연결됩니다.
+        입점 업체에만 상담을 요청할 수 있어요. 비입점·샘플 업체는 참고용으로만
+        표시됩니다.
       </p>
 
       <ul className="flex flex-col gap-2">
         {matches.map(({ a, distanceKm, overlap }) => {
           const on = pickedIds.has(a.id);
+          const consultable = a.verifiedStatus === "verified";
           return (
             <li key={a.id}>
               <button
                 type="button"
-                onClick={() => toggle(a.id)}
+                onClick={() => consultable && toggle(a.id)}
+                disabled={!consultable}
                 className={`flex w-full items-start justify-between gap-3 rounded-2xl border p-3 text-left transition ${
                   on
                     ? "border-brand bg-brand-50"
-                    : "border-gray-200 hover:border-brand-100"
+                    : consultable
+                      ? "border-gray-200 hover:border-brand-100"
+                      : "border-gray-100 bg-gray-50 opacity-70"
                 }`}
               >
                 <div className="flex-1">
                   <p className="text-xs text-gray-400">
                     {a.region} · {distanceKm.toFixed(1)}km · 매칭 {overlap}개
+                    {!consultable && " · 입점 후 상담 가능"}
                   </p>
                   <p className="mt-0.5 text-sm font-semibold">{a.name}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
@@ -667,15 +736,21 @@ function Step5({
                     ))}
                   </div>
                 </div>
-                <span
-                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                    on
-                      ? "border-brand bg-brand text-white"
-                      : "border-gray-300"
-                  }`}
-                >
-                  {on ? "✓" : ""}
-                </span>
+                {consultable ? (
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                      on
+                        ? "border-brand bg-brand text-white"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {on ? "✓" : ""}
+                  </span>
+                ) : (
+                  <span className="mt-0.5 shrink-0 rounded-full bg-gray-200 px-1.5 py-0.5 text-[9px] text-gray-600">
+                    참고
+                  </span>
+                )}
               </button>
             </li>
           );
@@ -697,12 +772,17 @@ function Step5({
         </button>
         <button
           onClick={sendConsultationRequests}
-          disabled={pickedIds.size === 0}
+          disabled={verifiedSelected.length === 0}
           className="rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-40"
         >
-          {pickedIds.size}개 업체에 상담 요청
+          {verifiedSelected.length}개 입점 업체에 상담 요청
         </button>
       </div>
+
+      <p className="rounded-lg bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-500">
+        AI 설계 결과와 예상 견적은 참고용입니다. 실제 설계, 인허가, 시공 계약은
+        관련 자격을 가진 전문가와 사용자 간 직접 진행됩니다.
+      </p>
     </div>
   );
 }

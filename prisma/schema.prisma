@@ -44,6 +44,24 @@ enum DataSource {
   USER_SUBMITTED
 }
 
+enum ConsultationStatus {
+  REQUESTED
+  READ
+  REPLIED
+  CLOSED
+}
+
+enum ConsultationSenderRole {
+  USER
+  COMPANY
+}
+
+enum NotificationType {
+  CONSULTATION_REPLIED
+  CONSULTATION_READ
+  SYSTEM
+}
+
 enum ListingType {
   USED
   REQUEST
@@ -85,6 +103,10 @@ model User {
   company  Company?
   listings Listing[]
   projects Project[]
+  consultations    ConsultationRequest[] @relation("UserConsultations")
+  consultationMsgs ConsultationMessage[] @relation("UserConsultMsgs")
+  favorites        FavoriteCompany[]
+  notifications    Notification[]
   sentMessages     Message[] @relation("Sent")
   receivedMessages Message[] @relation("Received")
 }
@@ -118,6 +140,8 @@ model Company {
 
   quotes           Quote[]
   removalRequests  CompanyRemovalRequest[]
+  consultations    ConsultationRequest[]
+  favoritedBy      FavoriteCompany[]
 
   @@index([category])
   @@index([lat, lng])
@@ -138,6 +162,73 @@ model CompanyRemovalRequest {
 
   @@index([companyId])
   @@index([resolved])
+}
+
+/// 사용자가 입점 업체에 보낸 상담 요청.
+/// 계약·견적 확정이 아니며, 양 측의 대화 컨테이너 역할.
+model ConsultationRequest {
+  id           String              @id @default(cuid())
+  userId       String
+  user         User                @relation("UserConsultations", fields: [userId], references: [id], onDelete: Cascade)
+  companyId    String
+  company      Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  projectId    String?
+  project      Project?            @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title        String
+  message      String
+  budgetWon    Int?
+  desiredArea  String?
+  status       ConsultationStatus  @default(REQUESTED)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  messages ConsultationMessage[]
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+}
+
+model ConsultationMessage {
+  id                     String                 @id @default(cuid())
+  consultationRequestId  String
+  request                ConsultationRequest    @relation(fields: [consultationRequestId], references: [id], onDelete: Cascade)
+  senderId               String
+  senderRole             ConsultationSenderRole
+  body                   String
+  readAt                 DateTime?
+  createdAt              DateTime               @default(now())
+
+  sender User @relation("UserConsultMsgs", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([consultationRequestId])
+}
+
+model FavoriteCompany {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, companyId])
+  @@index([userId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  /// /consultations/[id] 같은 라우트
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
 }
 
 model Listing {
@@ -193,7 +284,8 @@ model Project {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  quotes Quote[]
+  quotes        Quote[]
+  consultations ConsultationRequest[]
 
   @@index([ownerId])
   @@index([status])
