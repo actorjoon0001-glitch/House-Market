@@ -31,6 +31,19 @@ enum BuildSpecialty {
   REMODEL           // 리모델링
 }
 
+enum VerifiedStatus {
+  SAMPLE
+  PUBLIC      // 공개 자료 기반 (동의 없음)
+  PENDING     // 입점 신청 검토 중
+  VERIFIED    // 동의 + 사업자 확인 완료
+}
+
+enum DataSource {
+  SAMPLE
+  PUBLIC
+  USER_SUBMITTED
+}
+
 enum ListingType {
   USED
   REQUEST
@@ -77,9 +90,9 @@ model User {
 }
 
 model Company {
-  id          String          @id @default(cuid())
-  ownerId     String          @unique
-  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  ownerId     String?          @unique
+  owner       User?            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name        String
   category    CompanyCategory
   specialties BuildSpecialty[]
@@ -90,15 +103,41 @@ model Company {
   region      String?
   lat         Float
   lng         Float
-  verified    Boolean         @default(false)
-  isDemo      Boolean         @default(false)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  /// 핵심 표시 정책 — 클라이언트는 verifiedStatus + contactPublic만 보고 노출 결정.
+  verifiedStatus         VerifiedStatus @default(SAMPLE)
+  dataSource             DataSource     @default(SAMPLE)
+  /// 동의 없는 공개 자료 기반 등재 여부
+  isListedWithoutConsent Boolean        @default(false)
+  /// 본인 동의를 받았는지
+  consentGiven           Boolean        @default(false)
+  /// 연락처 공개 동의 (verifiedStatus=VERIFIED 일 때만 의미 있음)
+  contactPublic          Boolean        @default(false)
+  isDemo                 Boolean        @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  quotes Quote[]
+  quotes           Quote[]
+  removalRequests  CompanyRemovalRequest[]
 
   @@index([category])
   @@index([lat, lng])
+  @@index([verifiedStatus])
+}
+
+/// 정보 수정·삭제 요청. 처리 후 Company.verifiedStatus를 PUBLIC→삭제 또는 정정.
+model CompanyRemovalRequest {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  requesterName String
+  requesterPhone String?
+  requesterEmail String?
+  reason       String
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([companyId])
+  @@index([resolved])
 }
 
 model Listing {

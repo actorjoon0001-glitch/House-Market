@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LegalNotice from "@/components/LegalNotice";
+import SafetyNotice from "@/components/SafetyNotice";
 import { DEMO_ARCHITECTS, SPECIALTY_LABEL } from "@/lib/demo/architects";
 
 const QUICK_LINKS = [
@@ -129,16 +130,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* LEGAL */}
+      {/* LEGAL + SAFETY */}
       <LegalNotice />
+      <SafetyNotice />
 
-      <p className="mt-4 text-center text-xs text-gray-400">
-        등록된 샘플 업체 {DEMO_ARCHITECTS.length}곳 · 분야{" "}
-        {Object.keys(SPECIALTY_LABEL).length}종 ·{" "}
-        <Link href="/apply" className="text-brand underline">
-          업체 입점 신청
-        </Link>
-      </p>
+      <footer className="mt-2 border-t border-gray-100 pt-4 text-center text-[11px] leading-relaxed text-gray-400">
+        <p>
+          집마켓은 공개 자료 및 입점 업체 정보를 기반으로 제공되며, 업체 정보는
+          요청 시 수정 또는 삭제될 수 있습니다.
+        </p>
+        <p className="mt-2">
+          등록 업체 {DEMO_ARCHITECTS.length}곳 · 분야{" "}
+          {Object.keys(SPECIALTY_LABEL).length}종 ·{" "}
+          <Link href="/apply" className="text-brand underline">
+            업체 입점 신청
+          </Link>{" "}
+          ·{" "}
+          <Link href="/removal-request" className="underline hover:text-gray-600">
+            정보 수정·삭제 요청
+          </Link>
+        </p>
+      </footer>
     </div>
   );
 }
