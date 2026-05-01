@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/", label: "홈", icon: "🏠" },
   { href: "/projects", label: "AI 설계", icon: "📐" },
-  { href: "/map", label: "건축사 지도", icon: "🗺️" },
-  { href: "/architects", label: "입점 업체", icon: "🏢" },
+  { href: "/map", label: "전문가 지도", icon: "🗺️" },
+  { href: "/architects", label: "전문가 찾기", icon: "🏢" },
   { href: "/market", label: "중고거래", icon: "🛒" },
   { href: "/me", label: "내정보", icon: "👤" },
 ];
@@ -22,7 +22,7 @@ export default function SideNav() {
             집마켓<span className="text-brand">.</span>
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            짓고 · 고치고 · 거래하는 집 플랫폼
+            AI로 구상하고, 전문가에게 상담하기
           </p>
         </Link>
       </div>

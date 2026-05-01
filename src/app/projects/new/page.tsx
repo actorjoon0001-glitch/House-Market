@@ -133,6 +133,7 @@ export default function NewProjectWizard() {
           onBack={() => setStep(3)}
           onNext={() => setStep(5)}
           hasLot={Boolean(lot)}
+          onRegenerate={() => setStep(1)}
         />
       )}
 
@@ -401,7 +402,7 @@ function Step3({
           disabled={loading}
           className="rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {loading ? "계산 중..." : "AI 견적 받기 →"}
+          {loading ? "계산 중..." : "예상 견적 보기 →"}
         </button>
       </div>
     </div>
@@ -413,15 +414,20 @@ function Step4({
   onBack,
   onNext,
   hasLot,
+  onRegenerate,
 }: {
   estimate: Estimate;
   onBack: () => void;
   onNext: () => void;
   hasLot: boolean;
+  onRegenerate: () => void;
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-bold">예상 견적</h2>
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-lg font-bold">예상 견적</h2>
+        <span className="text-[11px] text-gray-400">참고용 콘셉트</span>
+      </div>
 
       <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-700 p-5 text-white">
         <p className="text-xs opacity-80">총 예상 비용</p>
@@ -433,6 +439,11 @@ function Step4({
           {estimate.leadTimeDays}일
         </p>
       </div>
+
+      <p className="rounded-lg bg-yellow-50 px-3 py-2 text-[11px] leading-relaxed text-yellow-700">
+        예상 견적은 입력값과 룰베이스 기준의 참고 금액이며, 실제 견적은 현장
+        조건·자재·법규 검토에 따라 달라질 수 있습니다.
+      </p>
 
       <div className="rounded-2xl border border-gray-100 p-4">
         <p className="mb-3 text-sm font-semibold">비용 내역</p>
@@ -460,14 +471,26 @@ function Step4({
         </ul>
       </div>
 
+      <p className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-[11px] leading-relaxed text-gray-600">
+        이 설계는 참고용 콘셉트입니다. 실제 설계 및 인허가는 등록 건축사의
+        검토가 필요합니다.
+      </p>
+
       <button
         type="button"
         onClick={onNext}
         className="rounded-xl bg-brand py-3 text-base font-semibold text-white"
       >
         {hasLot
-          ? "가까운 건축사 보기 →"
-          : "건축사 매칭으로 (대지 위치 필요)"}
+          ? "🤝 이 설계로 상담 요청하기"
+          : "🤝 가까운 전문가에게 상담 요청 (대지 위치 필요)"}
+      </button>
+      <button
+        type="button"
+        onClick={onRegenerate}
+        className="rounded-xl border border-brand-100 bg-brand-50 py-2.5 text-sm font-medium text-brand"
+      >
+        설계 다시 수정하기
       </button>
       <button
         type="button"
@@ -567,7 +590,7 @@ function Step5({
     });
   }
 
-  function sendQuoteRequests() {
+  function sendConsultationRequests() {
     setSent(true);
   }
 
@@ -575,11 +598,15 @@ function Step5({
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-8 text-center">
         <p className="text-4xl">📨</p>
-        <p className="text-lg font-bold">견적 요청을 전송했어요</p>
+        <p className="text-lg font-bold">상담 요청을 전달했어요</p>
         <p className="text-sm text-gray-600">
-          {pickedIds.size}개 업체에 요청이 전달됐습니다.
+          {pickedIds.size}개 업체에 상담 요청이 전달됐습니다.
           <br />
           답변이 오면 채팅·이메일로 알려드릴게요.
+        </p>
+        <p className="mt-2 rounded-lg bg-white p-2.5 text-[11px] leading-relaxed text-gray-500">
+          상담 요청은 계약 체결이 아니며, 실제 계약은 사용자와 업체 간 직접
+          진행됩니다.
         </p>
         <button
           onClick={onBack}
@@ -593,7 +620,7 @@ function Step5({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-lg font-bold">대지에서 가까운 건축사</h2>
+      <h2 className="text-lg font-bold">대지에서 가까운 전문가</h2>
       <p className="text-xs text-gray-500">
         📍 {lot.address} · 스타일 매칭: {targetSpecialties
           .map((s) => SPECIALTY_LABEL[s])
@@ -605,7 +632,8 @@ function Step5({
       </div>
 
       <p className="rounded-lg bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
-        샘플 데이터입니다. 실제 견적은 전송되지 않으며, 업체 입점 후 연결됩니다.
+        샘플 데이터입니다. 상담 요청은 전송되지 않으며, 업체 입점 후 실제로
+        연결됩니다.
       </p>
 
       <ul className="flex flex-col gap-2">
@@ -668,11 +696,11 @@ function Step5({
           이전
         </button>
         <button
-          onClick={sendQuoteRequests}
+          onClick={sendConsultationRequests}
           disabled={pickedIds.size === 0}
           className="rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-40"
         >
-          {pickedIds.size}개 업체에 견적 요청
+          {pickedIds.size}개 업체에 상담 요청
         </button>
       </div>
     </div>
