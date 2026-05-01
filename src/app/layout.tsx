@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/components/AuthProvider";
 import BottomNav from "@/components/BottomNav";
 import SideNav from "@/components/SideNav";
 
@@ -24,15 +25,19 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <div className="min-h-screen bg-white md:flex">
-          <SideNav />
-          <div className="mx-auto flex w-full max-w-[480px] flex-col md:max-w-none md:flex-1">
-            <main className="flex-1 pb-16 md:pb-8">
-              <div className="mx-auto w-full md:max-w-5xl md:px-6">{children}</div>
-            </main>
+        <AuthProvider>
+          <div className="min-h-screen bg-white md:flex">
+            <SideNav />
+            <div className="mx-auto flex w-full max-w-[480px] flex-col md:max-w-none md:flex-1">
+              <main className="flex-1 pb-16 md:pb-8">
+                <div className="mx-auto w-full md:max-w-5xl md:px-6">
+                  {children}
+                </div>
+              </main>
+            </div>
+            <BottomNav />
           </div>
-          <BottomNav />
-        </div>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useUser } from "@/components/AuthProvider";
 import { unreadCount } from "@/lib/consultations/store";
 
 const tabs = [
@@ -18,11 +19,11 @@ const tabs = [
 
 export default function SideNav() {
   const pathname = usePathname();
+  const { user, configured, signOut } = useUser();
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
     setUnread(unreadCount());
-    // pathname이 바뀔 때마다 다시 계산 (다른 탭에서 답변을 받고 돌아왔을 수 있음)
   }, [pathname]);
 
   return (
@@ -78,6 +79,32 @@ export default function SideNav() {
         >
           업체 상담 관리 (데모)
         </Link>
+      </div>
+
+      {/* Auth state */}
+      <div className="mt-3 border-t border-gray-100 px-3 pt-3 text-xs">
+        {!configured ? (
+          <p className="rounded-lg bg-gray-50 px-2 py-1.5 text-[11px] text-gray-500">
+            Supabase 미연결 (데모 모드)
+          </p>
+        ) : user ? (
+          <div className="flex flex-col gap-1.5">
+            <p className="truncate text-[11px] text-gray-500">{user.email}</p>
+            <button
+              onClick={() => signOut()}
+              className="rounded-lg bg-gray-100 py-1.5 text-[11px] text-gray-700 hover:bg-gray-200"
+            >
+              로그아웃
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="block rounded-lg bg-brand py-1.5 text-center text-[11px] font-semibold text-white"
+          >
+            로그인
+          </Link>
+        )}
       </div>
     </aside>
   );
