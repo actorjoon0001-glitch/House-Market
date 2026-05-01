@@ -21,6 +21,8 @@ export const SPECIALTY_COLOR: Record<BuildSpecialty, string> = {
   REMODEL: "#EF4444",
 };
 
+export type VerifiedStatus = "sample" | "pending" | "verified";
+
 export type DemoArchitect = {
   id: string;
   name: string;
@@ -30,18 +32,29 @@ export type DemoArchitect = {
   lng: number;
   phone: string;
   specialties: BuildSpecialty[];
+  serviceAreas: string[];
   description: string;
+  portfolioImages: string[];
+  rating?: number;
+  reviewCount?: number;
+  isSample: boolean;
+  verifiedStatus: VerifiedStatus;
 };
+
+const SAMPLE_PORTFOLIO_PLACEHOLDER = [
+  "/images/portfolio-placeholder-1.svg",
+  "/images/portfolio-placeholder-2.svg",
+  "/images/portfolio-placeholder-3.svg",
+];
 
 /**
  * Synthetic demo dataset for the architect map.
- * - All names are fictional ("[샘플]" prefixed) to avoid impersonating real
- *   businesses (Korean PIPA / right-of-publicity considerations).
- * - Coordinates are real city centers but companies do not exist.
- * - Real architects must opt in via /apply 입점 신청 to be listed.
+ * - 모든 회사는 "[샘플]" 접두사 + 가상 회사명 (실존 업체 사칭 방지).
+ * - 좌표는 실제 시·군 중심점이지만 회사는 가상.
+ * - 실제 업체는 /apply 입점 신청 + 사업자 확인 후에만 노출.
+ * - 모든 entry: isSample=true, verifiedStatus="sample".
  */
 export const DEMO_ARCHITECTS: DemoArchitect[] = [
-  // 수도권
   {
     id: "demo-001",
     name: "[샘플] 한강건축사사무소",
@@ -51,7 +64,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.0473,
     phone: "02-000-0001",
     specialties: ["COUNTRY_HOUSE", "PASSIVE_HOUSE"],
-    description: "전원주택 · 패시브하우스 시공 가능 (샘플)",
+    serviceAreas: ["서울", "경기"],
+    description: "전원주택과 패시브하우스 콘셉트 상담을 받습니다 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.7,
+    reviewCount: 24,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-002",
@@ -62,7 +81,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.0457,
     phone: "031-000-0001",
     specialties: ["MOBILE_HOUSE", "STAY_REST_HOUSE"],
-    description: "이동식 주택 · 체류형 쉼터 (샘플)",
+    serviceAreas: ["서울", "경기", "강원"],
+    description: "이동식 주택과 체류형 쉼터 상담 가능 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.5,
+    reviewCount: 18,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-003",
@@ -73,7 +98,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.5099,
     phone: "031-000-0002",
     specialties: ["STAY_REST_HOUSE", "COUNTRY_HOUSE"],
-    description: "체류형 쉼터 · 전원주택 (샘플)",
+    serviceAreas: ["경기", "강원"],
+    description: "체류형 쉼터·전원주택 콘셉트 상담 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.6,
+    reviewCount: 12,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-004",
@@ -84,10 +115,14 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 126.4878,
     phone: "032-000-0001",
     specialties: ["MOBILE_HOUSE"],
-    description: "모듈러 · 이동식 주택 전문 (샘플)",
+    serviceAreas: ["인천", "경기"],
+    description: "모듈러·이동식 주택 콘셉트 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.4,
+    reviewCount: 9,
+    isSample: true,
+    verifiedStatus: "sample",
   },
-
-  // 강원
   {
     id: "demo-005",
     name: "[샘플] 강원소나무하우스",
@@ -97,7 +132,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 128.3905,
     phone: "033-000-0001",
     specialties: ["COUNTRY_HOUSE", "STAY_REST_HOUSE"],
-    description: "강원 전원주택 · 체류형 쉼터 (샘플)",
+    serviceAreas: ["강원"],
+    description: "강원 전원주택·체류형 쉼터 상담 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.8,
+    reviewCount: 31,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-006",
@@ -108,7 +149,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 128.6189,
     phone: "033-000-0002",
     specialties: ["MOBILE_HOUSE", "STAY_REST_HOUSE"],
-    description: "이동식 주택 · 체류형 쉼터 (샘플)",
+    serviceAreas: ["강원"],
+    description: "이동식 주택·체류형 쉼터 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.5,
+    reviewCount: 15,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-007",
@@ -119,10 +166,14 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.7298,
     phone: "033-000-0003",
     specialties: ["COUNTRY_HOUSE", "REMODEL"],
-    description: "전원주택 · 리모델링 (샘플)",
+    serviceAreas: ["강원", "경기"],
+    description: "전원주택·리모델링 콘셉트 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.6,
+    reviewCount: 21,
+    isSample: true,
+    verifiedStatus: "sample",
   },
-
-  // 충청
   {
     id: "demo-008",
     name: "[샘플] 충북패시브하우스",
@@ -132,7 +183,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.4890,
     phone: "043-000-0001",
     specialties: ["PASSIVE_HOUSE", "COUNTRY_HOUSE"],
-    description: "패시브하우스 · 전원주택 (샘플)",
+    serviceAreas: ["충북", "충남"],
+    description: "패시브하우스·전원주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.9,
+    reviewCount: 28,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-009",
@@ -143,7 +200,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.1139,
     phone: "041-000-0001",
     specialties: ["MOBILE_HOUSE"],
-    description: "모듈러 · 이동식 주택 (샘플)",
+    serviceAreas: ["충남", "충북"],
+    description: "모듈러·이동식 주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.3,
+    reviewCount: 11,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-010",
@@ -154,10 +217,14 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 128.3656,
     phone: "043-000-0002",
     specialties: ["STAY_REST_HOUSE"],
-    description: "체류형 쉼터 전문 (샘플)",
+    serviceAreas: ["충북"],
+    description: "체류형 쉼터 콘셉트 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.5,
+    reviewCount: 7,
+    isSample: true,
+    verifiedStatus: "sample",
   },
-
-  // 경상
   {
     id: "demo-011",
     name: "[샘플] 부산해운대건축사",
@@ -167,7 +234,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 129.1639,
     phone: "051-000-0001",
     specialties: ["COUNTRY_HOUSE", "REMODEL"],
-    description: "전원주택 · 리모델링 (샘플)",
+    serviceAreas: ["부산", "경남"],
+    description: "전원주택·리모델링 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.7,
+    reviewCount: 33,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-012",
@@ -178,7 +251,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 128.8896,
     phone: "055-000-0001",
     specialties: ["MOBILE_HOUSE", "STAY_REST_HOUSE"],
-    description: "이동식 주택 · 체류형 쉼터 (샘플)",
+    serviceAreas: ["경남", "부산"],
+    description: "이동식 주택·체류형 쉼터 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.4,
+    reviewCount: 14,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-013",
@@ -189,7 +268,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 129.2247,
     phone: "054-000-0001",
     specialties: ["COUNTRY_HOUSE"],
-    description: "전원주택 전문 (샘플)",
+    serviceAreas: ["경북"],
+    description: "전원주택 콘셉트 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.6,
+    reviewCount: 19,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-014",
@@ -200,7 +285,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 128.7294,
     phone: "054-000-0002",
     specialties: ["MOBILE_HOUSE", "COUNTRY_HOUSE"],
-    description: "이동식 주택 · 전원주택 (샘플)",
+    serviceAreas: ["경북"],
+    description: "이동식 주택·전원주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.5,
+    reviewCount: 16,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-015",
@@ -211,10 +302,14 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 128.4331,
     phone: "055-000-0002",
     specialties: ["STAY_REST_HOUSE", "MOBILE_HOUSE"],
-    description: "체류형 쉼터 · 이동식 주택 (샘플)",
+    serviceAreas: ["경남"],
+    description: "체류형 쉼터·이동식 주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.7,
+    reviewCount: 22,
+    isSample: true,
+    verifiedStatus: "sample",
   },
-
-  // 전라
   {
     id: "demo-016",
     name: "[샘플] 전주한옥건축",
@@ -224,7 +319,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.1480,
     phone: "063-000-0001",
     specialties: ["COUNTRY_HOUSE", "REMODEL"],
-    description: "전원주택 · 한옥 리모델링 (샘플)",
+    serviceAreas: ["전북"],
+    description: "전원주택·한옥 리모델링 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.8,
+    reviewCount: 27,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-017",
@@ -235,7 +336,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.4872,
     phone: "061-000-0001",
     specialties: ["STAY_REST_HOUSE", "COUNTRY_HOUSE"],
-    description: "체류형 쉼터 · 전원주택 (샘플)",
+    serviceAreas: ["전남", "광주"],
+    description: "체류형 쉼터·전원주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.6,
+    reviewCount: 20,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-018",
@@ -246,7 +353,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 127.6622,
     phone: "061-000-0002",
     specialties: ["MOBILE_HOUSE"],
+    serviceAreas: ["전남"],
     description: "이동식 주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.4,
+    reviewCount: 10,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-019",
@@ -257,10 +370,14 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 126.9120,
     phone: "062-000-0001",
     specialties: ["MOBILE_HOUSE", "PASSIVE_HOUSE"],
-    description: "모듈러 · 패시브하우스 (샘플)",
+    serviceAreas: ["광주", "전남", "전북"],
+    description: "모듈러·패시브하우스 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.7,
+    reviewCount: 25,
+    isSample: true,
+    verifiedStatus: "sample",
   },
-
-  // 제주
   {
     id: "demo-020",
     name: "[샘플] 제주돌담건축사",
@@ -270,7 +387,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 126.5312,
     phone: "064-000-0001",
     specialties: ["COUNTRY_HOUSE", "STAY_REST_HOUSE"],
-    description: "전원주택 · 체류형 쉼터 (샘플)",
+    serviceAreas: ["제주"],
+    description: "전원주택·체류형 쉼터 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.9,
+    reviewCount: 35,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-021",
@@ -281,7 +404,13 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 126.5601,
     phone: "064-000-0002",
     specialties: ["STAY_REST_HOUSE", "MOBILE_HOUSE"],
-    description: "체류형 쉼터 · 이동식 주택 (샘플)",
+    serviceAreas: ["제주"],
+    description: "체류형 쉼터·이동식 주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.7,
+    reviewCount: 26,
+    isSample: true,
+    verifiedStatus: "sample",
   },
   {
     id: "demo-022",
@@ -292,6 +421,16 @@ export const DEMO_ARCHITECTS: DemoArchitect[] = [
     lng: 126.1770,
     phone: "064-000-0003",
     specialties: ["MOBILE_HOUSE"],
+    serviceAreas: ["제주"],
     description: "이동식 주택 (샘플)",
+    portfolioImages: SAMPLE_PORTFOLIO_PLACEHOLDER,
+    rating: 4.5,
+    reviewCount: 13,
+    isSample: true,
+    verifiedStatus: "sample",
   },
 ];
+
+export function findArchitect(id: string): DemoArchitect | undefined {
+  return DEMO_ARCHITECTS.find((a) => a.id === id);
+}

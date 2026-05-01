@@ -1,81 +1,125 @@
 import Link from "next/link";
+import LegalNotice from "@/components/LegalNotice";
 import { DEMO_ARCHITECTS, SPECIALTY_LABEL } from "@/lib/demo/architects";
 
-const quickLinks = [
+const QUICK_LINKS = [
   { href: "/architects?specialty=COUNTRY_HOUSE", label: "전원주택", emoji: "🏡" },
   { href: "/architects?specialty=MOBILE_HOUSE", label: "이동식주택", emoji: "🚚" },
   { href: "/architects?specialty=STAY_REST_HOUSE", label: "체류형쉼터", emoji: "🏕️" },
   { href: "/architects?specialty=PASSIVE_HOUSE", label: "패시브하우스", emoji: "🌿" },
 ];
 
+const STEPS = [
+  {
+    n: 1,
+    icon: "✨",
+    title: "AI로 집 구상",
+    body: "원하는 평수·방·스타일만 입력하면 AI가 평면도와 3D 콘셉트를 만들어 줍니다.",
+  },
+  {
+    n: 2,
+    icon: "💰",
+    title: "예상 견적 확인",
+    body: "면적·자재·층수에 따른 참고용 예상 견적을 즉시 확인할 수 있습니다.",
+  },
+  {
+    n: 3,
+    icon: "📞",
+    title: "가까운 전문가에게 상담 요청",
+    body: "내 대지 주변의 건축사·시공사에게 상담을 요청하고 직접 비교하세요.",
+  },
+];
+
 export default function HomePage() {
-  const totalCount = DEMO_ARCHITECTS.length;
-
   return (
-    <div className="flex flex-col gap-6 p-4 md:gap-8 md:py-8">
-      <div className="-mx-4 bg-gradient-to-r from-brand to-brand-700 px-4 py-2.5 text-center text-xs font-semibold text-white md:mx-0 md:rounded-xl">
-        🎉 AI 콘셉트 설계 출시! 평면도·3D·견적까지 30초만에
-      </div>
-
-      <header className="md:pt-2">
-        <h1 className="text-3xl font-extrabold tracking-tight md:text-5xl">
-          집마켓 <span className="text-brand">.</span>
-        </h1>
-        <p className="mt-2 text-sm text-gray-500 md:text-base">
-          건축주 · 건축사 · 시공사 · 자재상이 만나는 집 전문 플랫폼.
-          <br className="hidden md:block" />
-          AI로 콘셉트 설계하고, 지도에서 가까운 시공사를 찾고, 동네에서 자재까지 거래하세요.
-        </p>
-      </header>
-
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {quickLinks.map((q) => (
-          <Link
-            key={q.href}
-            href={q.href}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-brand-50 p-4 text-center transition hover:bg-brand-100 active:scale-95 md:p-6"
-          >
-            <span className="text-3xl md:text-4xl">{q.emoji}</span>
-            <span className="text-sm font-medium text-gray-700">{q.label}</span>
-          </Link>
-        ))}
+    <div className="flex flex-col gap-6 p-4 md:gap-10 md:py-8">
+      {/* HERO */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-50 via-white to-brand-100 p-6 md:p-12">
+        <div className="md:max-w-2xl">
+          <p className="text-xs font-semibold text-brand md:text-sm">
+            집마켓 · House Market
+          </p>
+          <h1 className="mt-2 text-2xl font-extrabold leading-tight tracking-tight md:text-5xl">
+            집 짓고, 고치고, 거래하는
+            <br />
+            모든 것을 한 곳에서.
+          </h1>
+          <p className="mt-3 text-sm text-gray-600 md:text-lg">
+            AI로 콘셉트를 만들고, 가까운 건축사·시공사·자재상과 상담을
+            시작하세요.
+          </p>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row md:mt-7">
+            <Link
+              href="/projects/new"
+              className="rounded-xl bg-brand px-5 py-3 text-center text-base font-semibold text-white shadow-sm transition hover:bg-brand-600"
+            >
+              ✨ AI 설계 시작하기
+            </Link>
+            <Link
+              href="/map"
+              className="rounded-xl border border-brand bg-white px-5 py-3 text-center text-base font-semibold text-brand transition hover:bg-brand-50"
+            >
+              🗺️ 내 주변 전문가 찾기
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Link
-          href="/projects/new"
-          className="block rounded-2xl bg-gradient-to-br from-brand to-brand-700 p-5 text-white shadow-lg transition hover:shadow-xl md:p-7"
-        >
-          <p className="text-xs font-medium opacity-90">✨ AI 콘셉트 설계</p>
-          <p className="mt-1.5 text-lg font-bold leading-snug md:text-2xl">
-            AI로 평면도·3D 만들고
-            <br />
-            그대로 견적 받기
+      {/* 3-STEP EXPLANATION */}
+      <section>
+        <div className="mb-3 md:mb-5">
+          <h2 className="text-lg font-bold md:text-2xl">이렇게 사용하세요</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            3단계로 콘셉트부터 상담 요청까지
           </p>
-          <p className="mt-2 text-xs opacity-90 md:text-sm">
-            요구사항만 입력 → 30초만에 콘셉트 완성
-          </p>
-        </Link>
+        </div>
+        <ol className="grid gap-3 md:grid-cols-3 md:gap-4">
+          {STEPS.map((s) => (
+            <li
+              key={s.n}
+              className="rounded-2xl border border-gray-100 bg-white p-5 transition hover:border-brand-100"
+            >
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+                  {s.n}
+                </span>
+                <span className="text-2xl">{s.icon}</span>
+              </div>
+              <p className="mt-3 text-base font-bold">{s.title}</p>
+              <p className="mt-1 text-sm text-gray-600">{s.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
 
-        <Link
-          href="/map"
-          className="block rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-5 transition hover:border-brand md:p-7"
-        >
-          <p className="text-xs font-medium text-brand">🗺️ 전국 시공 지도</p>
-          <p className="mt-1.5 text-lg font-bold leading-snug md:text-2xl">
-            체류형쉼터 · 이동식 · 전원주택
-            <br />
-            가까운 건축사 한눈에
-          </p>
-          <p className="mt-2 text-xs text-gray-500 md:text-sm">
-            {totalCount}개 샘플 업체 등록 · 입점 업체 모집 중
-          </p>
-        </Link>
-      </div>
-
+      {/* QUICK CATEGORY LINKS */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold md:text-xl">동네 중고거래</h2>
+          <h2 className="text-lg font-bold md:text-xl">분야별로 살펴보기</h2>
+          <Link href="/architects" className="text-sm text-brand">
+            전체 보기 →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {QUICK_LINKS.map((q) => (
+            <Link
+              key={q.href}
+              href={q.href}
+              className="flex flex-col items-center gap-2 rounded-2xl bg-brand-50 p-4 text-center transition hover:bg-brand-100 active:scale-95 md:p-6"
+            >
+              <span className="text-3xl md:text-4xl">{q.emoji}</span>
+              <span className="text-sm font-medium text-gray-700">
+                {q.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* MARKET PLACEHOLDER */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold md:text-xl">동네 중고거래</h2>
           <Link href="/market" className="text-sm text-brand">
             전체보기
           </Link>
@@ -85,18 +129,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="mt-4 border-t border-gray-100 pt-4 text-xs text-gray-400 md:mt-8">
-        <p>
-          📋 지도/디렉토리에 표시되는 모든 업체는 현재 <strong>샘플 데이터</strong>입니다.
-        </p>
-        <p className="mt-1">
-          실제 업체로 교체되려면{" "}
-          <Link href="/apply" className="text-brand underline">
-            입점 신청
-          </Link>
-          이 필요합니다 (개인정보보호법 준수).
-        </p>
-      </footer>
+      {/* LEGAL */}
+      <LegalNotice />
+
+      <p className="mt-4 text-center text-xs text-gray-400">
+        등록된 샘플 업체 {DEMO_ARCHITECTS.length}곳 · 분야{" "}
+        {Object.keys(SPECIALTY_LABEL).length}종 ·{" "}
+        <Link href="/apply" className="text-brand underline">
+          업체 입점 신청
+        </Link>
+      </p>
     </div>
   );
 }

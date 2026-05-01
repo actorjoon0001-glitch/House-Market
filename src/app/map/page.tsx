@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import KakaoMap, { MapPin } from "@/components/KakaoMap";
+import LegalNotice from "@/components/LegalNotice";
 import {
   DEMO_ARCHITECTS,
   SPECIALTY_COLOR,
@@ -51,16 +53,11 @@ export default function MapPage() {
   );
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col md:h-[calc(100vh-4rem)]">
-      <div className="border-b border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
-        ⓘ 표시된 업체는 모두 <strong>샘플 데이터</strong>입니다. 실제 업체는
-        동의 후 입점 신청한 사업자만 노출됩니다.
-        <a href="/apply" className="ml-1 underline">
-          입점 신청 →
-        </a>
-      </div>
+    <div className="flex h-[calc(100vh-4rem)] flex-col">
+      <LegalNotice variant="banner" className="mx-3 mt-3" />
 
-      <div className="flex gap-2 overflow-x-auto border-b border-gray-100 px-3 py-2.5">
+      {/* Filter chips */}
+      <div className="flex gap-2 overflow-x-auto px-3 py-2.5">
         {FILTERS.map((f) => {
           const on = filter === f.key;
           return (
@@ -91,11 +88,49 @@ export default function MapPage() {
       <div className="relative flex-1">
         <KakaoMap pins={pins} fitBounds onSelect={(p) => setSelectedId(p.id)} />
 
+        {/* Color legend */}
+        <div className="absolute left-3 top-3 hidden rounded-xl bg-white/95 p-3 shadow-md backdrop-blur md:block">
+          <p className="mb-2 text-[11px] font-semibold text-gray-700">
+            마커 색상
+          </p>
+          <ul className="flex flex-col gap-1.5">
+            {(Object.keys(SPECIALTY_COLOR) as BuildSpecialty[]).map((s) => (
+              <li
+                key={s}
+                className="flex items-center gap-2 text-[11px] text-gray-600"
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: SPECIALTY_COLOR[s] }}
+                />
+                {SPECIALTY_LABEL[s]}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Floating CTA */}
+        {!selected && (
+          <Link
+            href="/projects/new"
+            className="absolute bottom-3 right-3 hidden rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-lg md:block"
+          >
+            ✨ 이 지역 전문가에게 상담 요청하기
+          </Link>
+        )}
+
         {selected && (
           <div className="absolute inset-x-3 bottom-3 rounded-2xl bg-white p-4 shadow-xl md:left-auto md:right-3 md:bottom-3 md:max-w-sm">
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-xs text-gray-500">{selected.region}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs text-gray-500">{selected.region}</p>
+                  {selected.isSample && (
+                    <span className="rounded-full bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700">
+                      샘플
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 text-base font-semibold">{selected.name}</p>
               </div>
               <button
@@ -118,11 +153,28 @@ export default function MapPage() {
                 </span>
               ))}
             </div>
-            <p className="mt-3 text-xs text-gray-400">
-              📞 {selected.phone} · {selected.address}
-            </p>
-            <p className="mt-2 rounded-lg bg-yellow-50 px-2 py-1.5 text-[11px] text-yellow-700">
-              샘플 정보입니다. 실제 연락처가 아닙니다.
+            {selected.rating && (
+              <p className="mt-2 text-xs text-gray-500">
+                ⭐ {selected.rating} · 후기 {selected.reviewCount}개
+              </p>
+            )}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Link
+                href={`/architects/${selected.id}`}
+                className="rounded-xl border border-gray-200 py-2 text-center text-xs font-medium hover:border-brand-100"
+              >
+                상세 보기
+              </Link>
+              <Link
+                href={`/architects/${selected.id}#consult`}
+                className="rounded-xl bg-brand py-2 text-center text-xs font-semibold text-white"
+              >
+                상담 요청하기
+              </Link>
+            </div>
+            <p className="mt-2 text-[10px] text-gray-400">
+              상담 요청은 계약이 아닙니다. 실제 계약은 사용자와 업체 간 직접
+              진행됩니다.
             </p>
           </div>
         )}
