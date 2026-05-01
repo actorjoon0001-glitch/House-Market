@@ -1,8 +1,20 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import FloorPlan2D from "@/components/FloorPlan2D";
+import KakaoAddressSearch, {
+  type ResolvedAddress,
+} from "@/components/KakaoAddressSearch";
+import KakaoMap, { type MapPin } from "@/components/KakaoMap";
+import {
+  DEMO_ARCHITECTS,
+  SPECIALTY_COLOR,
+  SPECIALTY_LABEL,
+  type BuildSpecialty,
+  type DemoArchitect,
+} from "@/lib/demo/architects";
+import { haversineKm } from "@/lib/geo";
 import type {
   DesignRequirements,
   Estimate,
@@ -27,8 +39,10 @@ const STYLES: { key: ProjectStyle; label: string; emoji: string }[] = [
   { key: "hanok", label: "한옥", emoji: "🏯" },
 ];
 
+type Step = 1 | 2 | 3 | 4 | 5;
+
 export default function NewProjectWizard() {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<Step>(1);
   const [req, setReq] = useState<DesignRequirements>({
     totalAreaPyeong: 30,
     bedrooms: 3,
@@ -38,6 +52,7 @@ export default function NewProjectWizard() {
     budgetWon: 350_000_000,
     notes: "",
   });
+  const [lot, setLot] = useState<ResolvedAddress | null>(null);
   const [plan, setPlan] = useState<FloorPlan | null>(null);
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [loading, setLoading] = useState(false);
@@ -78,13 +93,15 @@ export default function NewProjectWizard() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 md:py-8">
       <ProgressBar step={step} />
 
       {step === 1 && (
         <Step1
           req={req}
           setReq={setReq}
+          lot={lot}
+          setLot={setLot}
           onNext={generate}
           loading={loading}
         />
@@ -111,18 +128,35 @@ export default function NewProjectWizard() {
       )}
 
       {step === 4 && estimate && (
-        <Step4 estimate={estimate} onBack={() => setStep(3)} />
+        <Step4
+          estimate={estimate}
+          onBack={() => setStep(3)}
+          onNext={() => setStep(5)}
+          hasLot={Boolean(lot)}
+        />
+      )}
+
+      {step === 5 && lot && (
+        <Step5
+          lot={lot}
+          req={req}
+          onBack={() => setStep(4)}
+        />
+      )}
+
+      {step === 5 && !lot && (
+        <NoLotFallback onJumpToStep1={() => setStep(1)} />
       )}
     </div>
   );
 }
 
-function ProgressBar({ step }: { step: 1 | 2 | 3 | 4 }) {
-  const labels = ["요구사항", "평면도", "3D", "견적"];
+function ProgressBar({ step }: { step: Step }) {
+  const labels = ["요구사항", "평면도", "3D", "견적", "매칭"];
   return (
     <div className="flex items-center gap-1">
       {labels.map((l, i) => {
-        const idx = (i + 1) as 1 | 2 | 3 | 4;
+        const idx = (i + 1) as Step;
         const active = step >= idx;
         return (
           <div key={l} className="flex flex-1 items-center gap-1">
@@ -138,7 +172,7 @@ function ProgressBar({ step }: { step: 1 | 2 | 3 | 4 }) {
             >
               {l}
             </span>
-            {i < 3 && (
+            {i < labels.length - 1 && (
               <div
                 className={`h-0.5 flex-1 ${active ? "bg-brand" : "bg-gray-100"}`}
               />
@@ -153,11 +187,15 @@ function ProgressBar({ step }: { step: 1 | 2 | 3 | 4 }) {
 function Step1({
   req,
   setReq,
+  lot,
+  setLot,
   onNext,
   loading,
 }: {
   req: DesignRequirements;
   setReq: (r: DesignRequirements) => void;
+  lot: ResolvedAddress | null;
+  setLot: (a: ResolvedAddress | null) => void;
   onNext: () => void;
   loading: boolean;
 }) {
@@ -249,6 +287,19 @@ function Step1({
           className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand"
         />
       </Field>
+
+      <Field label="대지 위치 (선택, 가까운 건축사 매칭에 사용)">
+        <KakaoAddressSearch
+          initialAddress={lot?.address ?? ""}
+          placeholder="예: 강원 평창군 봉평면"
+          onResolve={setLot}
+        />
+      </Field>
+      {lot && (
+        <div className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+          📍 {lot.address}
+        </div>
+      )}
 
       <button
         onClick={onNext}
@@ -360,9 +411,13 @@ function Step3({
 function Step4({
   estimate,
   onBack,
+  onNext,
+  hasLot,
 }: {
   estimate: Estimate;
   onBack: () => void;
+  onNext: () => void;
+  hasLot: boolean;
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -407,9 +462,12 @@ function Step4({
 
       <button
         type="button"
+        onClick={onNext}
         className="rounded-xl bg-brand py-3 text-base font-semibold text-white"
       >
-        가까운 건축사·시공사 견적 요청
+        {hasLot
+          ? "가까운 건축사 보기 →"
+          : "건축사 매칭으로 (대지 위치 필요)"}
       </button>
       <button
         type="button"
@@ -417,6 +475,223 @@ function Step4({
         className="rounded-xl border border-gray-200 py-2.5 text-sm"
       >
         이전
+      </button>
+    </div>
+  );
+}
+
+function styleToSpecialties(style: ProjectStyle): BuildSpecialty[] {
+  switch (style) {
+    case "modern":
+      return ["COUNTRY_HOUSE", "PASSIVE_HOUSE"];
+    case "minimal":
+      return ["COUNTRY_HOUSE", "MOBILE_HOUSE"];
+    case "natural":
+      return ["COUNTRY_HOUSE", "STAY_REST_HOUSE"];
+    case "industrial":
+      return ["MOBILE_HOUSE", "COUNTRY_HOUSE"];
+    case "hanok":
+      return ["COUNTRY_HOUSE", "REMODEL"];
+    default:
+      return ["COUNTRY_HOUSE"];
+  }
+}
+
+function Step5({
+  lot,
+  req,
+  onBack,
+}: {
+  lot: ResolvedAddress;
+  req: DesignRequirements;
+  onBack: () => void;
+}) {
+  const targetSpecialties = useMemo(
+    () => styleToSpecialties(req.style),
+    [req.style],
+  );
+
+  const [pickedIds, setPickedIds] = useState<Set<string>>(new Set());
+  const [sent, setSent] = useState(false);
+
+  const matches = useMemo(() => {
+    const scored = DEMO_ARCHITECTS.map((a) => {
+      const distanceKm = haversineKm(
+        { lat: lot.lat, lng: lot.lng },
+        { lat: a.lat, lng: a.lng },
+      );
+      const overlap = a.specialties.filter((s) =>
+        targetSpecialties.includes(s),
+      ).length;
+      return { a, distanceKm, overlap };
+    });
+    return scored
+      .filter((s) => s.overlap > 0)
+      .sort((x, y) => {
+        if (y.overlap !== x.overlap) return y.overlap - x.overlap;
+        return x.distanceKm - y.distanceKm;
+      })
+      .slice(0, 8);
+  }, [lot, targetSpecialties]);
+
+  const pins: MapPin[] = useMemo(() => {
+    const list: MapPin[] = [
+      {
+        id: "_lot",
+        name: "대지 위치",
+        lat: lot.lat,
+        lng: lot.lng,
+        color: "#FF6F0F",
+        category: "대지",
+      },
+    ];
+    matches.forEach(({ a }) => {
+      list.push({
+        id: a.id,
+        name: a.name,
+        lat: a.lat,
+        lng: a.lng,
+        color: SPECIALTY_COLOR[a.specialties[0]],
+        category: SPECIALTY_LABEL[a.specialties[0]],
+      });
+    });
+    return list;
+  }, [lot, matches]);
+
+  function toggle(id: string) {
+    setPickedIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
+
+  function sendQuoteRequests() {
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-8 text-center">
+        <p className="text-4xl">📨</p>
+        <p className="text-lg font-bold">견적 요청을 전송했어요</p>
+        <p className="text-sm text-gray-600">
+          {pickedIds.size}개 업체에 요청이 전달됐습니다.
+          <br />
+          답변이 오면 채팅·이메일로 알려드릴게요.
+        </p>
+        <button
+          onClick={onBack}
+          className="mt-2 rounded-xl border border-gray-200 px-4 py-2 text-sm"
+        >
+          이전으로
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-lg font-bold">대지에서 가까운 건축사</h2>
+      <p className="text-xs text-gray-500">
+        📍 {lot.address} · 스타일 매칭: {targetSpecialties
+          .map((s) => SPECIALTY_LABEL[s])
+          .join(" / ")}
+      </p>
+
+      <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl border border-gray-200">
+        <KakaoMap pins={pins} fitBounds />
+      </div>
+
+      <p className="rounded-lg bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
+        샘플 데이터입니다. 실제 견적은 전송되지 않으며, 업체 입점 후 연결됩니다.
+      </p>
+
+      <ul className="flex flex-col gap-2">
+        {matches.map(({ a, distanceKm, overlap }) => {
+          const on = pickedIds.has(a.id);
+          return (
+            <li key={a.id}>
+              <button
+                type="button"
+                onClick={() => toggle(a.id)}
+                className={`flex w-full items-start justify-between gap-3 rounded-2xl border p-3 text-left transition ${
+                  on
+                    ? "border-brand bg-brand-50"
+                    : "border-gray-200 hover:border-brand-100"
+                }`}
+              >
+                <div className="flex-1">
+                  <p className="text-xs text-gray-400">
+                    {a.region} · {distanceKm.toFixed(1)}km · 매칭 {overlap}개
+                  </p>
+                  <p className="mt-0.5 text-sm font-semibold">{a.name}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {a.specialties.map((s) => (
+                      <span
+                        key={s}
+                        className="rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
+                        style={{ backgroundColor: SPECIALTY_COLOR[s] }}
+                      >
+                        {SPECIALTY_LABEL[s]}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <span
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                    on
+                      ? "border-brand bg-brand text-white"
+                      : "border-gray-300"
+                  }`}
+                >
+                  {on ? "✓" : ""}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      {matches.length === 0 && (
+        <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+          매칭되는 업체가 없어요. 입점 신청 받는 중입니다.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={onBack}
+          className="rounded-xl border border-gray-200 py-2.5 text-sm"
+        >
+          이전
+        </button>
+        <button
+          onClick={sendQuoteRequests}
+          disabled={pickedIds.size === 0}
+          className="rounded-xl bg-brand py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          {pickedIds.size}개 업체에 견적 요청
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function NoLotFallback({ onJumpToStep1 }: { onJumpToStep1: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-gray-200 p-8 text-center">
+      <p className="text-3xl">📍</p>
+      <p className="text-base font-semibold">대지 위치가 필요해요</p>
+      <p className="text-sm text-gray-500">
+        Step 1에서 대지 주소를 입력하면 가까운 건축사를 매칭해 드려요.
+      </p>
+      <button
+        onClick={onJumpToStep1}
+        className="mt-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white"
+      >
+        주소 입력하러 가기
       </button>
     </div>
   );
