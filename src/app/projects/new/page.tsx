@@ -625,7 +625,7 @@ function Step5({
     return { title, message };
   }
 
-  function sendConsultationRequests() {
+  async function sendConsultationRequests() {
     const verifiedOnly = Array.from(pickedIds).filter((id) => {
       const a = DEMO_ARCHITECTS.find((x) => x.id === id);
       return a?.verifiedStatus === "verified";
@@ -633,7 +633,7 @@ function Step5({
     const prefill = buildPrefill();
     const created: string[] = [];
     for (const companyId of verifiedOnly) {
-      const c = createConsultation({
+      const c = await createConsultation({
         companyId,
         title: prefill.title,
         message: prefill.message,

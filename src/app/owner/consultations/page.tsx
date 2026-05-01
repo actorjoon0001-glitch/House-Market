@@ -29,8 +29,17 @@ export default function OwnerConsultationsPage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setItems(listConsultationsForCompany(MOCK_OWNER_COMPANY_ID));
-    setHydrated(true);
+    let active = true;
+    (async () => {
+      const list = await listConsultationsForCompany(MOCK_OWNER_COMPANY_ID);
+      if (active) {
+        setItems(list);
+        setHydrated(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const company = findArchitect(MOCK_OWNER_COMPANY_ID);

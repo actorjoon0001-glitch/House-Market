@@ -41,6 +41,7 @@ npm run dev
 1. Supabase 대시보드 → **SQL Editor** → **New query**
 2. `supabase/migrations/0001_init.sql` 내용 전체 붙여넣기 → **Run**
 3. 같은 방식으로 `0002_rls.sql` 실행 (Row Level Security)
+4. **`0003_seed_demo_companies.sql`** 실행 (데모 업체 27개 시드 — 상담/관심 기능에 필수)
 
 ### 3. 매직 링크 이메일 설정
 - **Authentication → URL Configuration**:

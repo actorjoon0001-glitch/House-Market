@@ -19,8 +19,17 @@ export default function FavoritesPage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setIds(listFavoriteCompanyIds());
-    setHydrated(true);
+    let active = true;
+    (async () => {
+      const list = await listFavoriteCompanyIds();
+      if (active) {
+        setIds(list);
+        setHydrated(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const list = useMemo(
@@ -28,8 +37,8 @@ export default function FavoritesPage() {
     [ids],
   );
 
-  function unfav(id: string) {
-    toggleFavorite(id);
+  async function unfav(id: string) {
+    await toggleFavorite(id);
     setIds((cur) => cur.filter((x) => x !== id));
   }
 

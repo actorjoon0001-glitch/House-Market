@@ -18,9 +18,17 @@ export default function ComparePage() {
   const [picked, setPicked] = useState<string[]>([]);
 
   useEffect(() => {
-    const ids = listFavoriteCompanyIds();
-    setFavIds(ids);
-    setPicked(ids.slice(0, MAX));
+    let active = true;
+    (async () => {
+      const ids = await listFavoriteCompanyIds();
+      if (active) {
+        setFavIds(ids);
+        setPicked(ids.slice(0, MAX));
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const favorites = useMemo(

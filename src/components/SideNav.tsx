@@ -23,7 +23,13 @@ export default function SideNav() {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
-    setUnread(unreadCount());
+    let active = true;
+    unreadCount().then((n) => {
+      if (active) setUnread(n);
+    });
+    return () => {
+      active = false;
+    };
   }, [pathname]);
 
   return (

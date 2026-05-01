@@ -27,10 +27,10 @@ export default function ConsultationDetailPage() {
   const [messages, setMessages] = useState<ConsultationMessage[]>([]);
   const [reply, setReply] = useState("");
 
-  function reload() {
-    const r = findConsultation(id);
+  async function reload() {
+    const r = await findConsultation(id);
     setReq(r ?? null);
-    if (r) setMessages(listMessages(id));
+    if (r) setMessages(await listMessages(id));
   }
 
   useEffect(() => {
@@ -46,21 +46,21 @@ export default function ConsultationDetailPage() {
 
   const company = findArchitect(req.companyId);
 
-  function send() {
+  async function send() {
     if (!reply.trim()) return;
-    appendMessage(id, {
+    await appendMessage(id, {
       senderId: MOCK_USER_ID,
       senderRole: "USER",
       body: reply.trim(),
     });
     setReply("");
-    reload();
+    await reload();
   }
 
-  function close() {
+  async function close() {
     if (!confirm("상담을 종료하시겠어요?")) return;
-    updateConsultationStatus(id, "CLOSED");
-    reload();
+    await updateConsultationStatus(id, "CLOSED");
+    await reload();
   }
 
   return (

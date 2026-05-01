@@ -27,11 +27,17 @@ export default function ArchitectDetailPage() {
 
   const [fav, setFav] = useState(false);
   useEffect(() => {
-    setFav(isFavorite(a.id));
+    let active = true;
+    isFavorite(a.id).then((v) => {
+      if (active) setFav(v);
+    });
+    return () => {
+      active = false;
+    };
   }, [a.id]);
 
-  function handleFav() {
-    const now = toggleFavorite(a.id);
+  async function handleFav() {
+    const now = await toggleFavorite(a.id);
     setFav(now);
   }
 
