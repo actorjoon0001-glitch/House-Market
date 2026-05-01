@@ -35,6 +35,21 @@ enum ListingStatus {
   CLOSED
 }
 
+enum ProjectStatus {
+  DRAFT
+  DESIGN_READY
+  QUOTING
+  CONTRACTED
+  COMPLETED
+}
+
+enum QuoteStatus {
+  PENDING
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id           String    @id @default(cuid())
   phone        String?   @unique
@@ -48,6 +63,7 @@ model User {
 
   company  Company?
   listings Listing[]
+  projects Project[]
   sentMessages     Message[] @relation("Sent")
   receivedMessages Message[] @relation("Received")
 }
@@ -67,6 +83,8 @@ model Company {
   verified    Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+
+  quotes Quote[]
 
   @@index([category])
   @@index([lat, lng])
@@ -105,4 +123,46 @@ model Message {
 
   @@index([fromId])
   @@index([toId])
+}
+
+/// 건축주가 시작하는 집 짓기 프로젝트.
+/// requirements: 사용자가 입력한 요구사항(평수/방/스타일/예산 등)
+/// floorPlan: AI가 생성한 평면도 JSON (rooms[{id,name,x,y,w,h}], walls[], totalAreaM2)
+model Project {
+  id           String        @id @default(cuid())
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title        String
+  status       ProjectStatus @default(DRAFT)
+  address      String?
+  lat          Float?
+  lng          Float?
+  requirements Json
+  floorPlan    Json?
+  model3dUrl   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  quotes Quote[]
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+model Quote {
+  id           String      @id @default(cuid())
+  projectId    String
+  project      Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  companyId    String
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  status       QuoteStatus @default(PENDING)
+  totalWon     Int?
+  breakdown    Json?
+  leadTimeDays Int?
+  note         String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([projectId, companyId])
+  @@index([status])
 }
