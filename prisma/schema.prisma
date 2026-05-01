@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  OWNER
+  ARCHITECT
+  SUPPLIER
+  ADMIN
+}
+
+enum CompanyCategory {
+  ARCHITECT
+  CONTRACTOR
+  MATERIAL
+  INTERIOR
+  ETC
+}
+
+enum ListingType {
+  USED
+  REQUEST
+}
+
+enum ListingStatus {
+  ACTIVE
+  RESERVED
+  SOLD
+  CLOSED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  phone        String?   @unique
+  email        String?   @unique
+  name         String?
+  avatarUrl    String?
+  role         UserRole  @default(USER)
+  neighborhood String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company  Company?
+  listings Listing[]
+  sentMessages     Message[] @relation("Sent")
+  receivedMessages Message[] @relation("Received")
+}
+
+model Company {
+  id          String          @id @default(cuid())
+  ownerId     String          @unique
+  owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  category    CompanyCategory
+  description String?
+  bizNumber   String?
+  phone       String?
+  address     String
+  lat         Float
+  lng         Float
+  verified    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([category])
+  @@index([lat, lng])
+}
+
+model Listing {
+  id        String        @id @default(cuid())
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  type      ListingType   @default(USED)
+  title     String
+  body      String
+  priceWon  Int?
+  status    ListingStatus @default(ACTIVE)
+  address   String?
+  lat       Float?
+  lng       Float?
+  images    String[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([type, status])
+  @@index([lat, lng])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  fromId     String
+  toId       String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  from User @relation("Sent", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("Received", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([fromId])
+  @@index([toId])
+}

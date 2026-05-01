@@ -1,0 +1,10 @@
+{
+  "name": "집마켓",
+  "short_name": "집마켓",
+  "description": "건축주·건축사·자재상이 만나고, 동네에서 중고로 거래하는 집 전문 플랫폼",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF6F0F",
+  "icons": []
+}
