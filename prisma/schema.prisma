@@ -23,6 +23,14 @@ enum CompanyCategory {
   ETC
 }
 
+enum BuildSpecialty {
+  STAY_REST_HOUSE   // 체류형 쉼터
+  MOBILE_HOUSE      // 이동식 주택
+  COUNTRY_HOUSE     // 전원주택
+  PASSIVE_HOUSE     // 패시브하우스
+  REMODEL           // 리모델링
+}
+
 enum ListingType {
   USED
   REQUEST
@@ -74,13 +82,16 @@ model Company {
   owner       User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name        String
   category    CompanyCategory
+  specialties BuildSpecialty[]
   description String?
   bizNumber   String?
   phone       String?
   address     String
+  region      String?
   lat         Float
   lng         Float
   verified    Boolean         @default(false)
+  isDemo      Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
