@@ -14,6 +14,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type {
   ConsultationMessage,
   ConsultationRequest,
+  ConsultationReview,
   ConsultationStatus,
   Notification,
 } from "./types";
@@ -23,6 +24,7 @@ const KEYS = {
   messages: "hm.consultation-messages.v1",
   notifications: "hm.notifications.v1",
   favorites: "hm.favorites.v1",
+  reviews: "hm.reviews.v1",
 } as const;
 
 export const MOCK_USER_ID = "user-demo";
@@ -512,6 +514,114 @@ export async function pushNotification(
   const all = read<Notification>(KEYS.notifications);
   all.push(note);
   write(KEYS.notifications, all);
+}
+
+// ─── Reviews ──────────────────────────────────────────────
+
+type DbReview = {
+  id: string;
+  consultation_request_id: string;
+  user_id: string;
+  company_id: string;
+  rating: number;
+  body: string | null;
+  created_at: string;
+};
+
+function mapReview(r: DbReview): ConsultationReview {
+  return {
+    id: r.id,
+    consultationRequestId: r.consultation_request_id,
+    userId: r.user_id,
+    companyId: r.company_id,
+    rating: r.rating,
+    body: r.body ?? undefined,
+    createdAt: r.created_at,
+  };
+}
+
+export async function listReviewsForCompany(
+  companyId: string,
+): Promise<ConsultationReview[]> {
+  const b = await resolveBackend();
+  if (b.kind === "supabase") {
+    const { data } = await b.sb
+      .from("consultation_reviews")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+    return (data as DbReview[] | null)?.map(mapReview) ?? [];
+  }
+  return read<ConsultationReview>(KEYS.reviews)
+    .filter((r) => r.companyId === companyId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function findReviewByConsultation(
+  consultationRequestId: string,
+): Promise<ConsultationReview | undefined> {
+  const b = await resolveBackend();
+  if (b.kind === "supabase") {
+    const { data } = await b.sb
+      .from("consultation_reviews")
+      .select("*")
+      .eq("consultation_request_id", consultationRequestId)
+      .maybeSingle();
+    return data ? mapReview(data as DbReview) : undefined;
+  }
+  return read<ConsultationReview>(KEYS.reviews).find(
+    (r) => r.consultationRequestId === consultationRequestId,
+  );
+}
+
+export async function createReview(input: {
+  consultationRequestId: string;
+  companyId: string;
+  rating: number;
+  body?: string;
+}): Promise<ConsultationReview> {
+  const b = await resolveBackend();
+  if (b.kind === "supabase") {
+    const { data, error } = await b.sb
+      .from("consultation_reviews")
+      .insert({
+        consultation_request_id: input.consultationRequestId,
+        user_id: b.user.id,
+        company_id: input.companyId,
+        rating: input.rating,
+        body: input.body ?? null,
+      })
+      .select()
+      .single();
+    if (error || !data) throw error ?? new Error("create review failed");
+    return mapReview(data as DbReview);
+  }
+  // 이미 작성한 후기 있으면 막기
+  const all = read<ConsultationReview>(KEYS.reviews);
+  if (all.some((r) => r.consultationRequestId === input.consultationRequestId)) {
+    throw new Error("이미 후기를 작성한 상담입니다");
+  }
+  const review: ConsultationReview = {
+    id: uid("rv"),
+    consultationRequestId: input.consultationRequestId,
+    userId: MOCK_USER_ID,
+    companyId: input.companyId,
+    rating: input.rating,
+    body: input.body,
+    createdAt: new Date().toISOString(),
+  };
+  all.push(review);
+  write(KEYS.reviews, all);
+  return review;
+}
+
+export async function aggregateRating(
+  companyId: string,
+): Promise<{ avg: number; count: number }> {
+  const reviews = await listReviewsForCompany(companyId);
+  if (reviews.length === 0) return { avg: 0, count: 0 };
+  const sum = reviews.reduce((a, r) => a + r.rating, 0);
+  return { avg: sum / reviews.length, count: reviews.length };
 }
 
 // ─── Favorites ────────────────────────────────────────────

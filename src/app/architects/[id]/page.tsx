@@ -6,7 +6,14 @@ import { useEffect, useState } from "react";
 import ConsultationRequestForm from "@/components/ConsultationRequestForm";
 import LegalNotice from "@/components/LegalNotice";
 import SafetyNotice from "@/components/SafetyNotice";
-import { isFavorite, toggleFavorite } from "@/lib/consultations/store";
+import StarRating from "@/components/StarRating";
+import {
+  aggregateRating,
+  isFavorite,
+  listReviewsForCompany,
+  toggleFavorite,
+} from "@/lib/consultations/store";
+import type { ConsultationReview } from "@/lib/consultations/types";
 import {
   findArchitect,
   SPECIALTY_COLOR,
@@ -26,11 +33,25 @@ export default function ArchitectDetailPage() {
   const isVerified = a.verifiedStatus === "verified";
 
   const [fav, setFav] = useState(false);
+  const [reviews, setReviews] = useState<ConsultationReview[]>([]);
+  const [agg, setAgg] = useState<{ avg: number; count: number }>({
+    avg: 0,
+    count: 0,
+  });
+
   useEffect(() => {
     let active = true;
-    isFavorite(a.id).then((v) => {
-      if (active) setFav(v);
-    });
+    (async () => {
+      const [favVal, list, ag] = await Promise.all([
+        isFavorite(a.id),
+        listReviewsForCompany(a.id),
+        aggregateRating(a.id),
+      ]);
+      if (!active) return;
+      setFav(favVal);
+      setReviews(list);
+      setAgg(ag);
+    })();
     return () => {
       active = false;
     };
@@ -85,7 +106,7 @@ export default function ArchitectDetailPage() {
           {policy.canShowRichDetail ? (
             <>
               <PortfolioBlock a={a} />
-              <ReviewsBlock a={a} />
+              <ReviewsBlock a={a} reviews={reviews} agg={agg} />
             </>
           ) : (
             <RestrictedDetailBlock />
@@ -254,20 +275,65 @@ function PortfolioBlock({ a }: { a: DemoArchitect }) {
   );
 }
 
-function ReviewsBlock({ a }: { a: DemoArchitect }) {
+function ReviewsBlock({
+  a,
+  reviews,
+  agg,
+}: {
+  a: DemoArchitect;
+  reviews: ConsultationReview[];
+  agg: { avg: number; count: number };
+}) {
+  // 사용자가 직접 작성한 후기가 있으면 그것 우선, 없으면 demo seed의 reviewCount fallback
+  const hasReal = reviews.length > 0;
+
   return (
     <div>
-      <p className="mb-2 text-sm font-semibold">
-        후기{" "}
-        {a.reviewCount !== undefined && (
-          <span className="text-xs font-normal text-gray-500">
-            ({a.reviewCount}개)
+      <div className="mb-2 flex items-center gap-2">
+        <p className="text-sm font-semibold">후기</p>
+        {hasReal ? (
+          <span className="flex items-center gap-1 text-xs text-gray-500">
+            <StarRating value={agg.avg} readOnly size="sm" />
+            <span className="font-medium text-gray-700">
+              {agg.avg.toFixed(1)}
+            </span>
+            <span>({agg.count}개)</span>
           </span>
+        ) : (
+          a.reviewCount !== undefined && (
+            <span className="text-xs text-gray-500">
+              샘플 평점 ⭐ {a.rating} · {a.reviewCount}개
+            </span>
+          )
         )}
-      </p>
-      <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-400">
-        아직 작성된 후기가 없어요.
       </div>
+
+      {hasReal ? (
+        <ul className="flex flex-col gap-2">
+          {reviews.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-xl border border-gray-100 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <StarRating value={r.rating} readOnly size="sm" />
+                <span className="text-[11px] text-gray-400">
+                  {new Date(r.createdAt).toLocaleDateString("ko-KR")}
+                </span>
+              </div>
+              {r.body && (
+                <p className="mt-1.5 whitespace-pre-wrap text-sm text-gray-700">
+                  {r.body}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="rounded-xl border border-dashed border-gray-200 p-6 text-center text-xs text-gray-400">
+          아직 작성된 후기가 없어요. 상담 종료 후 후기를 남길 수 있습니다.
+        </div>
+      )}
     </div>
   );
 }
