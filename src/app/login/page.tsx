@@ -55,7 +55,12 @@ export default function LoginPage() {
         : undefined;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "kakao",
-      options: { redirectTo },
+      options: {
+        redirectTo,
+        // 개인 개발자 계정의 카카오 앱은 account_email 권한이 없어 KOE205로 차단됨.
+        // 닉네임·프로필 사진만 요청해서 통과시킴. 비즈 앱 전환 후엔 account_email 추가 가능.
+        scopes: "profile_nickname profile_image",
+      },
     });
     if (error) {
       setError(error.message);
