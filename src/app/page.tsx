@@ -10,11 +10,15 @@ const quickLinks = [
 export default function HomePage() {
   return (
     <div className="flex flex-col gap-6 p-4">
-      <header className="pt-4">
-        <h1 className="text-2xl font-bold">
+      <div className="-mx-4 -mt-0 bg-gradient-to-r from-brand to-brand-700 px-4 py-2.5 text-center text-xs font-semibold text-white">
+        🎉 AI 콘셉트 설계 곧 출시! 평면도·3D·견적까지 30초만에
+      </div>
+
+      <header className="pt-2">
+        <h1 className="text-3xl font-extrabold tracking-tight">
           집마켓 <span className="text-brand">.</span>
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1.5 text-sm text-gray-500">
           가까운 건축사·자재상·중고매물을 한눈에
         </p>
       </header>
