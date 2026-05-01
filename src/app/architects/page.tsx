@@ -1,9 +1,12 @@
 import Link from "next/link";
 import LegalNotice from "@/components/LegalNotice";
+import SafetyNotice from "@/components/SafetyNotice";
 import {
   DEMO_ARCHITECTS,
   SPECIALTY_COLOR,
   SPECIALTY_LABEL,
+  statusRank,
+  visibilityPolicy,
   type BuildSpecialty,
 } from "@/lib/demo/architects";
 
@@ -22,18 +25,21 @@ export default function ArchitectsPage({
   searchParams: { specialty?: string };
 }) {
   const active = (searchParams.specialty ?? "ALL") as "ALL" | BuildSpecialty;
-  const list =
+  const list = (
     active === "ALL"
       ? DEMO_ARCHITECTS
       : DEMO_ARCHITECTS.filter((a) =>
           a.specialties.includes(active as BuildSpecialty),
-        );
+        )
+  )
+    .slice()
+    .sort((a, b) => statusRank(a) - statusRank(b));
 
   return (
     <div className="flex flex-col gap-4 p-4 md:py-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold md:text-3xl">전국 입점 업체</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">전국 등록 업체</h1>
           <p className="mt-1 text-sm text-gray-500">
             체류형 쉼터 · 이동식 주택 · 전원주택 · 패시브하우스 · 리모델링
           </p>
@@ -47,6 +53,7 @@ export default function ArchitectsPage({
       </header>
 
       <LegalNotice variant="banner" />
+      <SafetyNotice variant="banner" />
 
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => {
@@ -70,47 +77,56 @@ export default function ArchitectsPage({
       </div>
 
       <p className="text-xs text-gray-500">
-        총 <strong>{list.length}</strong>개 업체
+        총 <strong>{list.length}</strong>개 업체 (입점 업체 우선 정렬)
       </p>
 
       <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {list.map((a) => (
-          <li key={a.id}>
-            <Link
-              href={`/architects/${a.id}`}
-              className="block rounded-2xl border border-gray-100 p-4 transition hover:border-brand-100 hover:shadow-sm"
-            >
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700">
-                  샘플
-                </span>
-                <p className="text-xs text-gray-400">{a.region}</p>
-              </div>
-              <p className="mt-1 text-base font-semibold">{a.name}</p>
-              <p className="mt-1 text-sm text-gray-600">{a.description}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {a.specialties.map((s) => (
+        {list.map((a) => {
+          const policy = visibilityPolicy(a);
+          return (
+            <li key={a.id}>
+              <Link
+                href={`/architects/${a.id}`}
+                className="block rounded-2xl border border-gray-100 p-4 transition hover:border-brand-100 hover:shadow-sm"
+              >
+                <div className="flex items-center gap-2">
                   <span
-                    key={s}
-                    className="rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
-                    style={{ backgroundColor: SPECIALTY_COLOR[s] }}
+                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${policy.badge.cls}`}
                   >
-                    {SPECIALTY_LABEL[s]}
+                    {policy.badge.label}
                   </span>
-                ))}
-              </div>
-              {a.rating && (
-                <p className="mt-2 text-xs text-gray-500">
-                  ⭐ {a.rating} · 후기 {a.reviewCount}개
+                  <p className="text-xs text-gray-400">{a.region}</p>
+                </div>
+                <p className="mt-1 text-base font-semibold leading-snug">
+                  {a.name}
                 </p>
-              )}
-              <p className="mt-3 text-xs text-gray-400">📍 {a.address}</p>
-              <p className="mt-3 text-xs font-semibold text-brand">
-                상담 요청하기 →
-              </p>
-            </Link>
-          </li>
-        ))}
+                <p className="mt-1 text-sm text-gray-600">{a.description}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {a.specialties.map((s) => (
+                    <span
+                      key={s}
+                      className="rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
+                      style={{ backgroundColor: SPECIALTY_COLOR[s] }}
+                    >
+                      {SPECIALTY_LABEL[s]}
+                    </span>
+                  ))}
+                </div>
+                {policy.canShowRichDetail && a.rating !== undefined && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    ⭐ {a.rating} · 후기 {a.reviewCount}개
+                  </p>
+                )}
+                <p className="mt-3 text-xs text-gray-400">📍 {a.address}</p>
+                <p className="mt-3 text-xs font-semibold text-brand">
+                  {a.verifiedStatus === "verified"
+                    ? "상담 요청하기 →"
+                    : "상세 보기 →"}
+                </p>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
