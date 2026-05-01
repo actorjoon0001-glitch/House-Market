@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import ConsultationRequestForm from "@/components/ConsultationRequestForm";
 import LegalNotice from "@/components/LegalNotice";
 import SafetyNotice from "@/components/SafetyNotice";
+import { isFavorite, toggleFavorite } from "@/lib/consultations/store";
 import {
   findArchitect,
   SPECIALTY_COLOR,
@@ -11,17 +15,25 @@ import {
   type DemoArchitect,
 } from "@/lib/demo/architects";
 
-export default function ArchitectDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const a = findArchitect(params.id);
-  if (!a) notFound();
+export default function ArchitectDetailPage() {
+  const params = useParams<{ id: string }>();
+  const found = findArchitect(params.id);
+  if (!found) notFound();
+  const a: DemoArchitect = found;
 
   const policy = visibilityPolicy(a);
   const isPublic = a.verifiedStatus === "public";
   const isVerified = a.verifiedStatus === "verified";
+
+  const [fav, setFav] = useState(false);
+  useEffect(() => {
+    setFav(isFavorite(a.id));
+  }, [a.id]);
+
+  function handleFav() {
+    const now = toggleFavorite(a.id);
+    setFav(now);
+  }
 
   return (
     <div className="flex flex-col gap-5 p-4 md:py-8">
@@ -38,7 +50,22 @@ export default function ArchitectDetailPage({
           </span>
           <span className="text-xs text-gray-500">{a.region}</span>
         </div>
-        <h1 className="text-2xl font-bold leading-snug md:text-3xl">{a.name}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-bold leading-snug md:text-3xl">
+            {a.name}
+          </h1>
+          <button
+            onClick={handleFav}
+            aria-label="관심 업체 저장"
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+              fav
+                ? "border-brand bg-brand text-white"
+                : "border-gray-200 bg-white text-gray-600 hover:border-brand"
+            }`}
+          >
+            {fav ? "♥ 관심 업체" : "♡ 관심 업체 저장"}
+          </button>
+        </div>
         <p className="text-xs text-gray-500">{policy.statusLabel}</p>
       </header>
 
@@ -65,15 +92,12 @@ export default function ArchitectDetailPage({
             className="sticky top-4 flex flex-col gap-3 rounded-2xl border border-brand-100 bg-brand-50 p-5"
           >
             {isVerified ? (
-              <>
-                <ConsultationRequestForm architectName={a.name} />
-                <p className="rounded-lg bg-white p-2.5 text-[11px] leading-relaxed text-gray-500">
-                  상담 요청은 계약 체결이 아니며, 실제 계약은 사용자와 업체 간
-                  직접 진행됩니다.
-                </p>
-              </>
+              <ConsultationRequestForm
+                companyId={a.id}
+                architectName={a.name}
+              />
             ) : (
-              <NonVerifiedSidebar />
+              <NonVerifiedSidebar status={a.verifiedStatus} />
             )}
           </div>
         </div>
@@ -102,7 +126,7 @@ function PublicSourceBanner() {
       <p className="font-semibold text-gray-800">ℹ️ 공개 자료 기반 표시 안내</p>
       <p className="mt-1.5 text-gray-600">
         이 업체는 공개 자료를 기반으로 표시됩니다. 집마켓에 입점하지 않았으며,
-        연락처와 포트폴리오는 노출되지 않습니다.
+        직접 상담 요청은 보낼 수 없습니다.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Link
@@ -122,16 +146,23 @@ function PublicSourceBanner() {
   );
 }
 
-function NonVerifiedSidebar() {
+function NonVerifiedSidebar({
+  status,
+}: {
+  status: "sample" | "public" | "pending" | "verified";
+}) {
+  const message =
+    status === "public"
+      ? "이 업체는 아직 입점하지 않아 직접 상담 요청을 보낼 수 없습니다."
+      : status === "pending"
+        ? "입점 검토 중인 업체입니다."
+        : "샘플 데이터에는 상담 요청을 보낼 수 없습니다.";
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-white p-4 text-xs leading-relaxed text-gray-700">
       <p className="text-sm font-semibold text-gray-800">
-        🤝 입점 업체에서 상담받기
+        🤝 상담 요청 안내
       </p>
-      <p className="text-gray-600">
-        이 업체는 아직 집마켓에 입점하지 않았습니다. 입점한 업체에서 상담을
-        받거나, 업체 입점을 요청해 주세요.
-      </p>
+      <p className="text-gray-600">{message}</p>
       <Link
         href="/architects"
         className="rounded-xl bg-brand py-2.5 text-center text-sm font-semibold text-white"
