@@ -27,16 +27,18 @@ export default function OwnerConsultationDetailPage() {
   const [messages, setMessages] = useState<ConsultationMessage[]>([]);
   const [reply, setReply] = useState("");
 
-  function reload() {
-    const r = findConsultation(id);
+  async function reload() {
+    const r = await findConsultation(id);
     setReq(r ?? null);
-    if (r) setMessages(listMessages(id));
+    if (r) setMessages(await listMessages(id));
   }
 
   useEffect(() => {
-    // 처음 owner가 열람할 때 REQUESTED → READ
-    markReadByOwner(id);
-    reload();
+    (async () => {
+      // 처음 owner가 열람할 때 REQUESTED → READ
+      await markReadByOwner(id);
+      await reload();
+    })();
   }, [id]);
 
   if (req === undefined) {
@@ -46,21 +48,21 @@ export default function OwnerConsultationDetailPage() {
     notFound();
   }
 
-  function send() {
+  async function send() {
     if (!reply.trim()) return;
-    appendMessage(id, {
+    await appendMessage(id, {
       senderId: MOCK_OWNER_COMPANY_ID,
       senderRole: "COMPANY",
       body: reply.trim(),
     });
     setReply("");
-    reload();
+    await reload();
   }
 
-  function close() {
+  async function close() {
     if (!confirm("이 상담을 종료하시겠어요?")) return;
-    updateConsultationStatus(id, "CLOSED");
-    reload();
+    await updateConsultationStatus(id, "CLOSED");
+    await reload();
   }
 
   return (

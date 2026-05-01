@@ -29,8 +29,17 @@ export default function MyConsultationsPage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setItems(listConsultationsForUser());
-    setHydrated(true);
+    let active = true;
+    (async () => {
+      const list = await listConsultationsForUser();
+      if (active) {
+        setItems(list);
+        setHydrated(true);
+      }
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const filtered = useMemo(
@@ -107,8 +116,14 @@ function ConsultationCard({ c }: { c: ConsultationRequest }) {
   const [lastMsg, setLastMsg] = useState<string>("");
 
   useEffect(() => {
-    const msgs = listMessages(c.id);
-    setLastMsg(msgs[msgs.length - 1]?.body ?? "");
+    let active = true;
+    (async () => {
+      const msgs = await listMessages(c.id);
+      if (active) setLastMsg(msgs[msgs.length - 1]?.body ?? "");
+    })();
+    return () => {
+      active = false;
+    };
   }, [c.id]);
 
   return (

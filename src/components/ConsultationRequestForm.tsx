@@ -39,23 +39,26 @@ export default function ConsultationRequestForm({
   const [desiredArea, setDesiredArea] = useState(defaults?.desiredArea ?? "");
   const [agree, setAgree] = useState(false);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!agree) return;
     setSubmitting(true);
-    const created = createConsultation({
-      companyId,
-      projectId: defaults?.projectId,
-      title: title || `[상담 요청] ${architectName}`,
-      message,
-      budgetWon: budget ? Number(budget) : undefined,
-      desiredArea: desiredArea || undefined,
-      contact: phone,
-      requesterName: name,
-    });
-    setSubmitting(false);
-    setSubmitted(created.id);
-    onSubmitted?.(created.id);
+    try {
+      const created = await createConsultation({
+        companyId,
+        projectId: defaults?.projectId,
+        title: title || `[상담 요청] ${architectName}`,
+        message,
+        budgetWon: budget ? Number(budget) : undefined,
+        desiredArea: desiredArea || undefined,
+        contact: phone,
+        requesterName: name,
+      });
+      setSubmitted(created.id);
+      onSubmitted?.(created.id);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {

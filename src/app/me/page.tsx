@@ -61,18 +61,32 @@ export default function MePage() {
   >([]);
 
   useEffect(() => {
-    setCounts({
-      consultations: listConsultationsForUser().length,
-      favorites: listFavoriteCompanyIds().length,
-      unread: unreadCount(),
-    });
-    setNotes(listNotifications().slice(0, 5));
+    let active = true;
+    (async () => {
+      const [cons, favs, unread, notif] = await Promise.all([
+        listConsultationsForUser(),
+        listFavoriteCompanyIds(),
+        unreadCount(),
+        listNotifications(),
+      ]);
+      if (!active) return;
+      setCounts({
+        consultations: cons.length,
+        favorites: favs.length,
+        unread,
+      });
+      setNotes(notif.slice(0, 5));
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  function clearUnread() {
-    markAllRead();
+  async function clearUnread() {
+    await markAllRead();
     setCounts((c) => ({ ...c, unread: 0 }));
-    setNotes(listNotifications().slice(0, 5));
+    const refreshed = await listNotifications();
+    setNotes(refreshed.slice(0, 5));
   }
 
   return (
