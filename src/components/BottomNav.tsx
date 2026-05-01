@@ -14,7 +14,7 @@ const tabs = [
 export default function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30">
+    <nav className="fixed inset-x-0 bottom-0 z-30 md:hidden">
       <div className="mx-auto max-w-[480px] border-t border-gray-100 bg-white">
         <ul className="grid grid-cols-5">
           {tabs.map((t) => {
